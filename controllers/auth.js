@@ -2,6 +2,7 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const randtoken = require('rand-token');
+const svc = require('../services');
 
 const refreshTokens = {};
 
@@ -29,15 +30,67 @@ function login(req, res, next) {
   })(req, res, next);
 }
 
+// function signup(req, res, next) {
+//   passport.authenticate('signup', { session: false }, async (err, user, info) => {
+//     try {
+//       if (err || !user) res.status(401).json({ error: 'fail to register user', message: info.message });
+//       res.status(201).json({ user });
+//     } catch (error) {
+//       next(error);
+//     }
+//   })(req, res, next);
+// }
+
 function signup(req, res, next) {
   passport.authenticate('signup', { session: false }, async (err, user, info) => {
     try {
-      if (err || !user) res.status(401).json({ error: 'fail to register user', message: info.message });
-      res.status(201).json({ user });
+      if (err || !user) {
+        res.status(401).json({ error: 'fail to register user', message: info.message });
+        return;
+      }
+
+      console.log('User:', user.email);
+      
+
+      // Generate a token for email verification
+      const verificationToken = jwt.sign(
+        { uid: user.id, email: user.email }, 
+        process.env.PROJECT_JWT_SECRET, 
+        { expiresIn: '24h' }
+      );
+      
+      // Save the token in the user record or send it via email
+      const verificationUrl = `${req.body.redirect_url}/verify-email?token=${verificationToken}`;
+      
+      // Call your email service to send the verification email
+      svc.verifyMail(user.email, verificationUrl);
+
+      res.status(201).json({ user, message: 'Verification email sent!' });
     } catch (error) {
       next(error);
     }
   })(req, res, next);
+}
+
+async function verifyEmail(req, res) {
+  const { token } = req.query;
+
+  try {
+    // Verify the JWT token
+    const decoded = jwt.verify(token, process.env.PROJECT_JWT_SECRET);
+    const user = await m.User.findOne({ where: { id: decoded.uid } });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user to mark them as verified
+    await user.update({ verifiedAt: new Date() });
+
+    res.json({ message: 'Email successfully verified!' });
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid or expired token' });
+  }
 }
 
 function passwordResetTokenValidation(req, res, next) {
@@ -81,5 +134,5 @@ function passwordReset(req, res, next) {
 }
 
 module.exports = {
-  login, signup, passwordResetTokenValidation, passwordReset,
+  login, signup, verifyEmail, passwordResetTokenValidation, passwordReset,
 };
