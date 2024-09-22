@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class ExpoToken extends Model {
+  class Comment extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,15 +11,17 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      this.belongsTo(models.User);
+      this.belongsTo(models.Post, { foreignKey: 'post_id', as: 'post' });
+      this.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
     }
   }
-  ExpoToken.init({
-    token: DataTypes.TEXT,
-    UserId: DataTypes.STRING,
+  Comment.init({
+    post_id: DataTypes.INTEGER,
+    user_id: DataTypes.INTEGER,
+    comment: DataTypes.TEXT
   }, {
     sequelize,
-    modelName: 'ExpoToken',
+    modelName: 'Comment',
   });
-  return ExpoToken;
+  return Comment;
 };

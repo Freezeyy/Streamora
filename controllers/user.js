@@ -34,20 +34,63 @@ async function index(req, res) {
   }
 }
 
-function getDetails(req, res) {
-  const id = (req.query.id) ? req.query.id : req.user.id;
-  if (req.user.RoleId === 1 || req.user.id === parseInt(id, 10)) {
-    m.User.findOne({
-      attributes: { exclude: ['password', 'updatedAt', 'reset_token'] },
+// function getDetails(req, res) {
+//   const id = (req.query.id) ? req.query.id : req.user.id;
+//   if (req.user.RoleId === 1 || req.user.id === parseInt(id, 10)) {
+//     m.User.findOne({
+//       attributes: { exclude: ['password', 'updatedAt', 'reset_token'] },
+//       where: { id },
+//       include: [{ model: m.Role, attributes: ['id', 'name'] }, { model: m.Organization, attributes: ['id', 'name'] }],
+//     })
+//       .then((data) => res.json({ data }))
+//       .catch((e) => res.status(500).send({ error: e }));
+//   } else {
+//     res.status(403).send({ error: 'access denied' });
+//   }
+// }
+
+async function getDetails(req, res) {
+  const id = req.params.id || req.user.id; // Get user ID from route parameters or default to logged-in user
+  const includes = [];
+
+  // Check if 'with' query parameter exists and includes 'followers'
+  if (req.query.with && req.query.with.includes('followers')) {
+    includes.push({
+      model: m.User,
+      as: 'followers', // Alias for followers based on your associations
+      attributes: ['id', 'name'], // Include only the 'id' and 'name' attributes of followers
+      through: { attributes: [] }, // Exclude join table attributes
+    });
+  }
+
+  // Check if 'with' query parameter exists and includes 'followings'
+  if (req.query.with && req.query.with.includes('followings')) {
+    includes.push({
+      model: m.User,
+      as: 'following', // Alias for following based on your associations
+      attributes: ['id', 'name'], // Include only the 'id' and 'name' attributes of followings
+      through: { attributes: [] }, // Exclude join table attributes
+    });
+  }
+
+  try {
+    const user = await m.User.findOne({
       where: { id },
-      include: [{ model: m.Role, attributes: ['id', 'name'] }, { model: m.Organization, attributes: ['id', 'name'] }],
-    })
-      .then((data) => res.json({ data }))
-      .catch((e) => res.status(500).send({ error: e }));
-  } else {
-    res.status(403).send({ error: 'access denied' });
+      attributes: { exclude: ['password', 'updatedAt', 'reset_token'] },
+      include: includes,
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error });
   }
 }
+
+
 
 function passwordForgot(req, res) {
   m.User.findOne({ where: { email: req.body.email } })

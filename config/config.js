@@ -16,7 +16,7 @@ module.exports = {
     username: process.env.DATABASE_USERNAME,
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME,
-    logging: (process.env.APPLICATION_DEBUG === 'true'),
+    logging: (process.env.APPLICATION_DEBUG === 'true') ? console.log : false,
     dialectOptions: {
       decimalNumbers: true,
     },
