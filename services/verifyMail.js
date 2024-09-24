@@ -57,7 +57,7 @@ const oauth2Client = new google.auth.OAuth2(
 
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-async function sendMailVerifyEmail(url, user) {
+async function sendMailVerifyEmail( user ) {
   try {
 
     // console.log('Sending verification email to:', user.email);
@@ -82,13 +82,11 @@ async function sendMailVerifyEmail(url, user) {
 
     const info = await transporter.sendMail({
       from: `"Support Team" <${USER}>`, // sender address
-      to: url, // receiver
-      subject: 'Email Verification', // Subject line
+      to: user.email, // receiver
+      subject: 'Signup Successful', // Subject line
       html: `
         Hello ${user.name},<br><br>
-        Thank you for signing up. Please verify your email by clicking on the following link:<br><br>
-        <a href="${url}">Verify Email</a><br><br>
-        If the link doesn't work, copy and paste this URL into your browser: ${url}<br><br>
+        Thank you for signing up. We are please to tell you that you have successfully signup for an account on our platform. Please login to complete your account creation<br><br>
         Regards,<br>
         Support Team`,
     });

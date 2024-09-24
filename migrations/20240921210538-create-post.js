@@ -15,8 +15,8 @@ module.exports = {
       content: {
         type: Sequelize.TEXT
       },
-      image: {
-        type: Sequelize.STRING
+      media: {
+        type: Sequelize.STRING  // Media path (image/video)
       },
       createdAt: {
         allowNull: false,

@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
   Post.init({
     user_id: DataTypes.STRING,
     content: DataTypes.TEXT,
-    image: DataTypes.STRING,
+    media: DataTypes.JSON, // Field for media (image/video)
   }, {
     sequelize,
     modelName: 'Post',

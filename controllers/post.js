@@ -1,4 +1,6 @@
 const m = require('../models');
+const path = require('path');
+const upload = require('../middleware/upload');
 
 async function index(req, res) {
   const includes = [
@@ -41,18 +43,31 @@ async function index(req, res) {
 
 
 async function create(req, res) {
-  const { content, image } = req.body;
   try {
+    const { content } = req.body;
+
+    // Check if files were uploaded
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    // Map through the files to create an array of file paths
+    const mediaPaths = req.files.map(file => path.join('/uploads/posts', file.filename)); // Create an array of media paths
+
+    // Create the post with the uploaded media
     const post = await m.Post.create({
-      user_id: req.user.id, // Assuming you have user authentication
+      user_id: req.user.id, // Assuming user authentication is implemented
       content,
-      image,
+      media: mediaPaths // Store the array of media paths
     });
+
     res.status(201).json(post);
   } catch (error) {
     res.status(500).json({ error });
   }
 }
+
+
 
 async function getDetails(req, res) {
   const { id } = req.params;

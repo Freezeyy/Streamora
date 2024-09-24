@@ -12,6 +12,12 @@ const multer = require('multer');
 const upload = multer();
 const custommiddleware = require('./middleware');
 const schema = require('./gql/schema'); // comment this if dont need graphql
+
+const path = require('path');
+
+//uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // routes
 const openRoute_lists = require('./routes/open');
 const secureRoute_list = require('./routes/secure');
@@ -24,7 +30,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // for parsing multipart/form-data
-app.use(upload.array());
+// app.use(upload.array());
 app.use(express.static('public'));
 
 // passport

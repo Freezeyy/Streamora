@@ -49,7 +49,7 @@ function signup(req, res, next) {
         return;
       }
 
-      console.log('User:', user.email);
+      console.log('User:', user);
       
 
       // Generate a token for email verification
@@ -63,7 +63,7 @@ function signup(req, res, next) {
       const verificationUrl = `${req.body.redirect_url}/verify-email?token=${verificationToken}`;
       
       // Call your email service to send the verification email
-      svc.verifyMail(user.email, verificationUrl);
+      svc.verifyMail(user, verificationUrl);
 
       res.status(201).json({ user, message: 'Verification email sent!' });
     } catch (error) {
