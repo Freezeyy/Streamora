@@ -1,38 +1,67 @@
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
+const { google } = require('googleapis');
 
-async function sendMailForgotPassword(url, user) {
+const CLIENT_ID = process.env.GMAIL_OAUTH_CLIENT_ID;
+const CLIENT_SECRET = process.env.GMAIL_OAUTH_CLIENT_SECRET;
+const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
+const REFRESH_TOKEN = process.env.GMAIL_OAUTH_REFRESH_TOKEN;
+const USER = process.env.GMAIL_USER;
+
+const oauth2Client = new google.auth.OAuth2(
+  CLIENT_ID,
+  CLIENT_SECRET,
+  REDIRECT_URI
+);
+
+oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
+async function sendPasswordResetEmail(user) {
   try {
+    const accessToken = await oauth2Client.getAccessToken();
+
+    // Create a password reset token
+    const resetToken = jwt.sign(
+      { uid: user.id, email: user.email }, 
+      process.env.PROJECT_JWT_SECRET, 
+      { expiresIn: '1h' } // Token expires in 1 hour
+    );
+
+    // Save the reset token to the user model (assuming a `reset_token` column exists)
+    await user.update({ reset_token: resetToken });
+
+    // Password reset link
+    const resetUrl = `http://localhost:3001/reset-password?token=${resetToken}`;
+
     const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: process.env.MAIL_PORT,
-      secure: true, // true for 465, false for other ports
-      // requireTLS: true, //if using gmail(587)
+      service: 'gmail',
       auth: {
-        user: process.env.MAIL_USERNAME, // generated ethereal user
-        pass: process.env.MAIL_PASSWORD, // generated ethereal password
+        type: 'OAuth2',
+        user: USER,
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        refreshToken: REFRESH_TOKEN,
+        accessToken: accessToken.token,
       },
     });
+
     const info = await transporter.sendMail({
-      from: `"OFO Support Team" <${process.env.MAIL_USERNAME}>`,
-      to: `${user.email}`,
-      subject: 'Request For Password Reset', // Subject line
+      from: `"Support Team" <${USER}>`, // sender address
+      to: user.email, // receiver
+      subject: 'Password Reset Request', // Subject line
       html: `
-      Greetings ${user.name},<br><br>
-      Request reset password at BandarOS! <br>
-      Please click on the following link to reset your password:<br><br>
-      <a href="${url}">Reset Password<a><br><br>
-      If the above does not appear to be clickable, please copy this URL <a href="${url}">${url}<a> and paste it in your web browser. You need to follow this instruction in order to reset password for your account.
-      <br><br>
-
-      Best regards,<br><br>
-
-      OFO Support Team`, // html body
+        Hello ${user.name},<br><br>
+        You requested to reset your password. Please click on the link below to reset it:<br><br>
+        <a href="${resetUrl}">Reset Password</a><br><br>
+        This link will expire in 1 hour.<br><br>
+        Regards,<br>
+        Support Team`,
     });
-    console.log('Message sent: %s', info.messageId);
-    // console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+
+    console.log('Password reset email sent: %s', info.messageId);
   } catch (error) {
-    console.log('fail to send email', error);
+    console.log('Failed to send password reset email', error.message);
   }
 }
-// Route Open
-module.exports = sendMailForgotPassword;
+
+module.exports = sendPasswordResetEmail;

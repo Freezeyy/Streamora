@@ -60,12 +60,22 @@ passport.use('jwt', new JWTstrategy({
 }));
 
 passport.use('forgotpasswordjwt', new JWTstrategy({
-  jwtFromRequest: ExtractJWT.fromBodyField('token'),
+  jwtFromRequest: ExtractJWT.fromBodyField('resetToken'), // Match this with your request body
   secretOrKey: process.env.PROJECT_JWT_SECRET,
 }, async (jwt_payload, done) => {
-  const user = await UserModel.findOne({ where: { id: encoderBase64(jwt_payload.uid, false) } });
-  if (!user) return done('Fail to validate user', false); // not valid user
-  if (moment().unix() > encoderBase64(jwt_payload.token, false)) return done('Token expired', false); // expired
-  if (user) return done(null, user);
-  return null;
+  try {
+    const userId = String(jwt_payload.uid); // Convert uid to string
+    const user = await UserModel.findOne({ where: { id: userId } });
+
+    if (!user) return done(null, false); // User not found
+
+    // Check for token expiration
+    if (moment().unix() > jwt_payload.exp) return done(null, false); // Token expired
+
+    // If user is found and token is valid
+    return done(null, user);
+  } catch (error) {
+    return done(error, false); // Handle any errors that occur during the user lookup
+  }
 }));
+

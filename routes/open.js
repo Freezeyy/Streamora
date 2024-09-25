@@ -10,9 +10,12 @@ router.get('/staticdata', c.general.staticdata);
 router.post('/login', c.auth.login);
 router.post('/signup', c.auth.signup);
 router.get('/verify-email', c.auth.verifyEmail);
-router.post('/forgot-password', c.user.passwordForgot);
-router.post('/verify-reset-password-token', c.auth.passwordResetTokenValidation);
-router.post('/reset-password', c.auth.passwordReset);
+// router.post('/forgot-password', c.user.passwordForgot);
+// Route to request password reset
+router.post('/request-password-reset', c.auth.requestPasswordReset);
+
+// Route to reset password
+router.post('/reset-password', c.auth.passwordResetTokenValidation, c.auth.passwordReset);
 
 // Public Post and Comment Routes
 router.get('/posts', c.post.index); // Get all posts
