@@ -86,7 +86,7 @@ async function sendMailVerifyEmail( user ) {
       subject: 'Signup Successful', // Subject line
       html: `
         Hello ${user.name},<br><br>
-        Thank you for signing up. We are please to tell you that you have successfully signup for an account on our platform. Please login to complete your account creation<br><br>
+        Thank you for signing up. We are pleased to tell you that you have successfully signup for an account on our platform. Please login to complete your account creation<br><br>
         Regards,<br>
         Support Team`,
     });

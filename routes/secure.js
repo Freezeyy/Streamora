@@ -14,6 +14,8 @@ router.post('/user/:UserId', c.userUpdate.update);
 
 // Post management
 router.post('/posts', upload.array('media', 10), m.requireAdminOrUser, c.post.create); // Create a new post
+router.put('/posts/:postId', upload.array('media', 10), m.requireAdminOrUser, c.post.update);
+
 router.post('/posts/:postId/comments', m.requireAdminOrUser, c.comment.create); // Create a comment on a post
 router.post('/posts/:postId/like', m.requireAdminOrUser, c.like.toggleLike); // Like or unlike a post
 
