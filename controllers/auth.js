@@ -22,8 +22,9 @@ function login(req, res, next) {
         // Send back the token to the user
         const token = jwt.sign(jwt_content, process.env.PROJECT_JWT_SECRET, { expiresIn: 86400 });
         const refreshToken = randtoken.uid(256);
+        const userId = user.id;
         refreshTokens[refreshToken] = user.email;
-        res.json({ token, refreshToken });
+        res.json({ token, refreshToken, userId });
       });
     } catch (error) {
       next(error);
@@ -65,6 +66,9 @@ function signup(req, res, next) {
       
       // Call your email service to send the verification email
       svc.verifyMail(user, verificationUrl);
+
+      console.log("REFRESHHHHH TOKEN: ", process.env.GMAIL_OAUTH_REFRESH_TOKEN);
+      
 
       res.status(201).json({ user, message: 'Verification email sent!' });
     } catch (error) {

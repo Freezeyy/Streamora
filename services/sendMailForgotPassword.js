@@ -1,29 +1,18 @@
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
-const { google } = require('googleapis');
 
-const CLIENT_ID = process.env.GMAIL_OAUTH_CLIENT_ID;
-const CLIENT_SECRET = process.env.GMAIL_OAUTH_CLIENT_SECRET;
-const REDIRECT_URI = 'https://developers.google.com/oauthplayground';
-const REFRESH_TOKEN = process.env.GMAIL_OAUTH_REFRESH_TOKEN;
-const USER = process.env.GMAIL_USER;
-
-const oauth2Client = new google.auth.OAuth2(
-  CLIENT_ID,
-  CLIENT_SECRET,
-  REDIRECT_URI
-);
-
-oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+// Environment variables
+const EMAIL_USER = process.env.MAIL_USERNAME;
+const EMAIL_PASS = process.env.MAIL_PASSWORD;
+const SMTP_HOST = process.env.MAIL_HOST;
+const SMTP_PORT = process.env.MAIL_PORT;
 
 async function sendPasswordResetEmail(user) {
   try {
-    const accessToken = await oauth2Client.getAccessToken();
-
     // Create a password reset token
     const resetToken = jwt.sign(
-      { uid: user.id, email: user.email }, 
-      process.env.PROJECT_JWT_SECRET, 
+      { uid: user.id, email: user.email },
+      process.env.PROJECT_JWT_SECRET,
       { expiresIn: '1h' } // Token expires in 1 hour
     );
 
@@ -33,20 +22,20 @@ async function sendPasswordResetEmail(user) {
     // Password reset link
     const resetUrl = `http://localhost:3001/reset-password?token=${resetToken}`;
 
+    // Configure nodemailer
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: true, // Use SSL
       auth: {
-        type: 'OAuth2',
-        user: USER,
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET,
-        refreshToken: REFRESH_TOKEN,
-        accessToken: accessToken.token,
+        user: EMAIL_USER,
+        pass: EMAIL_PASS,
       },
     });
 
+    // Send email
     const info = await transporter.sendMail({
-      from: `"Support Team" <${USER}>`, // sender address
+      from: `"Support Team" <${EMAIL_USER}>`, // sender address
       to: user.email, // receiver
       subject: 'Password Reset Request', // Subject line
       html: `
@@ -58,9 +47,10 @@ async function sendPasswordResetEmail(user) {
         Support Team`,
     });
 
-    console.log('Password reset email sent: %s', info.messageId);
+    console.log('✅ Password reset email sent successfully:', info.messageId);
   } catch (error) {
-    console.log('Failed to send password reset email', error.message);
+    console.error('❌ Failed to send password reset email:', error.message);
+    console.error('Error Stack:', error.stack);
   }
 }
 
